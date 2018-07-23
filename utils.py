@@ -67,15 +67,17 @@ class ColorPalette:
             return self.colorMap[index]
             pass
 
+
 def sigmoid(values):
     return 1 / (1 + np.exp(-values))
+
 
 def softmax(values):
     values_exp = np.exp(values)
     return values_exp / np.sum(values_exp, axis=-1, keepdims=True)
 
 
-#Draw density image
+# Draw density image
 def drawDensityImage(density, maxDensity=-1, nChannels=1):
     if maxDensity < 0:
         maxDensity = density.max() / 2
@@ -86,7 +88,7 @@ def drawDensityImage(density, maxDensity=-1, nChannels=1):
         pass
     return densityImage
 
-#Draw segmentation image. The input could be either HxW or HxWxC
+# Draw segmentation image. The input could be either HxW or HxWxC
 def drawSegmentationImage(segmentations, numColors=42, blackIndex=-1):
     if segmentations.ndim == 2:
         numColors = max(numColors, segmentations.max() + 2)
@@ -108,9 +110,9 @@ def drawSegmentationImage(segmentations, numColors=42, blackIndex=-1):
     segmentation = segmentation.astype(np.int)
     return randomColor[segmentation.reshape(-1)].reshape((height, width, 3))
 
+
 def drawMaskImage(mask):
     return (np.clip(mask * 255, 0, 255)).astype(np.uint8)
-
 
 
 def projectIndices(indicesMap, pointSegmentation, min_x, max_x, min_y, max_y, width):
@@ -176,7 +178,8 @@ def extractCornersFromSegmentation(segmentation, cornerTypeRange=[0, 13]):
         continue
     return orientationPoints
 
-#Extract corners from heatmaps
+
+# Extract corners from heatmaps
 def getSegmentationFromCorners(width, height, orientationCorners):
     segmentation = np.zeros((height, width))
     for orientation, corners in enumerate(orientationCorners):
@@ -186,7 +189,8 @@ def getSegmentationFromCorners(width, height, orientationCorners):
         continue
     return segmentation
 
-#Evaluate corner predictions
+
+# Evaluate corner predictions
 def evaluateCorners(cornersPred, cornersGT, distanceThreshold = 15):
     numGT = 0
     numPred = 0
@@ -235,6 +239,7 @@ def evaluateSegmentation(segmentationPred, segmentationGT, numSegments = 12):
     meanIOU = sumIOU / numIOU
     return np.array([accuracy, meanIOU])
 
+
 def evaluateDetection(segmentationPred, segmentationGT, numSegments = 12, IOUThreshold = 0.5):
     from skimage import measure
     numGT = 0
@@ -257,11 +262,13 @@ def evaluateDetection(segmentationPred, segmentationGT, numSegments = 12, IOUThr
         continue
     return (numMatches, numGT, numPred)
 
+
 def fitPlane(points):
     if points.shape[0] == points.shape[1]:
         return np.linalg.solve(points, np.ones(points.shape[0]))
     else:
         return np.linalg.lstsq(points, np.ones(points.shape[0]))[0]
+
 
 def rotatePoints(points, segmentation, numSampledPoints = 10000):
     sampledInds = np.arange(points.shape[0])
@@ -300,6 +307,7 @@ def rotatePoints(points, segmentation, numSampledPoints = 10000):
 
     points[:, :2] = np.matmul(points[:, :2], rotationMatrix)
     return points
+
 
 def rotatePointsWithMatrix(points, segmentation, numSampledPoints = 10000):
     sampledInds = np.arange(points.shape[0])
@@ -366,6 +374,7 @@ def drawTopDownView(points, width, height):
     image = (np.minimum(image * 255, 255)).astype(np.uint8)
     return image
 
+
 def writePointCloud(filename, pointCloud):
     with open(filename, 'w') as f:
         header = """ply
@@ -429,6 +438,7 @@ def getDensity(points, width=256, height=256):
         continue
     return density
 
+
 def getDensityFromIndices(indices, width=256, height=256):
     density = np.zeros((height, width))
     for index in indices:
@@ -436,6 +446,7 @@ def getDensityFromIndices(indices, width=256, height=256):
         density[index / width, index % width] += 1
         continue
     return density
+
 
 def drawCornerImages(segmentations, numColors=42, blackIndex=0):
     if segmentations.ndim == 2:
@@ -468,6 +479,7 @@ def drawCornerImages(segmentations, numColors=42, blackIndex=0):
         continue
     return images
 
+
 def segmentation2Heatmaps(segmentation, numLabels):
     width = segmentation.shape[1]
     height = segmentation.shape[0]
@@ -475,8 +487,10 @@ def segmentation2Heatmaps(segmentation, numLabels):
     heatmaps = (np.expand_dims(segmentation, -1) == labels).astype(np.float32)
     return heatmaps
 
+
 def heatmaps2Segmentation(heatmaps):
     return np.argmax(heatmaps, axis=2)
+
 
 def calcIOU(rectangle_1, rectangle_2):
     # mins_1 = rectangle_1.min(0)
@@ -502,6 +516,7 @@ def calcIOU(rectangle_1, rectangle_2):
     union = area_1 + area_2 - intersection
     return float(intersection) / union
 
+
 def calcIOUMask(mask_1, mask_2):
     intersection = (mask_1 * mask_2).sum()
     union = mask_1.sum() + mask_2.sum() - intersection
@@ -523,6 +538,7 @@ v    """
 
     return kernel / np.sum(kernel)
 
+
 def disk(k):
     """
     creates gaussian kernel with side length l and a sigma of sig
@@ -533,6 +549,7 @@ def disk(k):
     kernel = (np.sqrt(pow(xx, 2) + pow(yy, 2)) <= (k - 1) / 2).astype(np.float32)
 
     return kernel
+
 
 if __name__ == '__main__':
     rect_1 = np.array([[54.56637168141593, 91.65781710914455], [85.51592356687898, 90.92993630573248], [64.36440677966101, 123.17372881355932], [84.18115942028986, 109.3840579710145]])

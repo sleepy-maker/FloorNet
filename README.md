@@ -26,6 +26,38 @@ To evaluate the performance of our trained model, please run:
 python train.py --task=evaluate
 ```
 
+
+## File Structure Summary
+
+- QP.py
+
+    For solving the IP in the final step? Not sure
+    
+- train.py
+
+    The model definition of floornet(in build_graph()), and the training/testing/visualization logics.
+    
+- evaluate.py
+
+    Evaluate the final results (produced by Floornet + IP)
+
+- RecordWriterTango.py
+
+    This is for converting the collected Tango data into tfrecords, then during training/testing tfrecords are used to create 
+    tensorflow Dataset instances.
+    
+- RecordReader.py
+
+    This is for reading the saved tfrecords when instantiating tensorflow Dataset 
+
+- augmentation_tf.py
+
+    Where is this file used?
+    
+- floorplan_utils.py
+
+    Is this for drawing the final floorplan output?
+
 ## Contact
 
 If you have any questions, please contact me at chenliu@wustl.edu.

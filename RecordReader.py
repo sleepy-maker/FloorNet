@@ -11,11 +11,13 @@ import functools
 from floorplan_utils import *
 from augmentation_tf import *
 from utils import *
-#sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 NUM_THREADS = 8
 
-def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=False, kernelSize=11):
+
+def parse_fn(example, augmentation, readImageFeatures=False, convertCorners=False, kernelSize=11):
     if readImageFeatures:
         features = tf.parse_single_example(
             example,
@@ -28,7 +30,8 @@ def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=Fa
                 'num_corners': tf.FixedLenFeature([], tf.int64),
                 'icon': tf.FixedLenFeature([], tf.string),
                 'room': tf.FixedLenFeature([], tf.string),
-                'image': tf.FixedLenFeature(sum([size * size * numChannels for size, numChannels in zip(SIZES, NUM_CHANNELS)[1:]]), tf.float32),
+                'image': tf.FixedLenFeature(
+                    sum([size * size * numChannels for size, numChannels in zip(SIZES, NUM_CHANNELS)[1:]]), tf.float32),
                 'flags': tf.FixedLenFeature([2], tf.int64),
             })
     else:
@@ -49,7 +52,7 @@ def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=Fa
 
     points = tf.reshape(features['points'], (NUM_POINTS, NUM_INPUT_CHANNELS - 1))
     point_indices = tf.cast(features['point_indices'], tf.int32)
-    #point_indices = features['point_indices']
+    # point_indices = features['point_indices']
 
     corners = tf.cast(tf.reshape(features['corner'], [MAX_NUM_CORNERS, 3]), tf.int32)
     numCorners = features['num_corners']
@@ -63,7 +66,8 @@ def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=Fa
         imageFeatures = {}
         offset = 0
         for index, (size, numChannels) in enumerate(zip(SIZES, NUM_CHANNELS)[1:]):
-            imageFeatures[index] = tf.reshape(imageFeature[offset:offset + size * size * numChannels], (size, size, numChannels))
+            imageFeatures[index] = tf.reshape(imageFeature[offset:offset + size * size * numChannels],
+                                              (size, size, numChannels))
             offset += size * size * numChannels
             continue
     else:
@@ -72,14 +76,19 @@ def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=Fa
 
     flags = features['flags']
     if 'w' in augmentation:
-        point_indices, corners, heatmaps = tf.cond(tf.logical_or(tf.equal(flags[0], 0), tf.equal(flags[0], 4)), lambda: augmentWarping(point_indices, corners, heatmaps, gridStride=32, randomScale=2), lambda: (point_indices, corners, heatmaps))
-        #point_indices, corners, heatmaps = augmentWarping(point_indices, corners, heatmaps, gridStride=32, randomScale=4)
+        point_indices, corners, heatmaps = tf.cond(tf.logical_or(tf.equal(flags[0], 0), tf.equal(flags[0], 4)),
+                                                   lambda: augmentWarping(point_indices, corners, heatmaps,
+                                                                          gridStride=32, randomScale=2),
+                                                   lambda: (point_indices, corners, heatmaps))
+        # point_indices, corners, heatmaps = augmentWarping(point_indices, corners, heatmaps, gridStride=32, randomScale=4)
         pass
     if 's' in augmentation:
-        points, point_indices, corners, heatmaps, imageFeatures = augmentScaling(points, point_indices, corners, heatmaps, imageFeatures)
+        points, point_indices, corners, heatmaps, imageFeatures = augmentScaling(points, point_indices, corners,
+                                                                                 heatmaps, imageFeatures)
         pass
     if 'f' in augmentation:
-        points, point_indices, corners, heatmaps, imageFeatures = augmentFlipping(points, point_indices, corners, heatmaps, imageFeatures)
+        points, point_indices, corners, heatmaps, imageFeatures = augmentFlipping(points, point_indices, corners,
+                                                                                  heatmaps, imageFeatures)
         pass
 
     iconSegmentation = tf.cast(tf.squeeze(heatmaps[0]), tf.int32)
@@ -89,15 +98,19 @@ def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=Fa
 
     # point_indices_stack = getCoarseIndicesMaps(point_indices, WIDTH, HEIGHT, 0)
 
-    corners = tf.reshape(tf.concat([corners, tf.zeros((MAX_NUM_CORNERS - tf.shape(corners)[0], 3), dtype=tf.int32)], axis=0), (MAX_NUM_CORNERS, 3))
+    corners = tf.reshape(
+        tf.concat([corners, tf.zeros((MAX_NUM_CORNERS - tf.shape(corners)[0], 3), dtype=tf.int32)], axis=0),
+        (MAX_NUM_CORNERS, 3))
     if convertCorners:
-        cornerSegmentation = tf.stack([tf.sparse_to_dense(tf.stack([corners[:, 1], corners[:, 0]], axis=1), (HEIGHT, WIDTH), corners[:, 2], validate_indices=False)], axis=0)
+        cornerSegmentation = tf.stack([tf.sparse_to_dense(tf.stack([corners[:, 1], corners[:, 0]], axis=1),
+                                                          (HEIGHT, WIDTH), corners[:, 2], validate_indices=False)],
+                                      axis=0)
         cornerHeatmaps = tf.one_hot(cornerSegmentation, depth=NUM_CORNERS + 1, axis=-1)[:, :, :, 1:]
-        #kernel_size = kernelSize
-        #neighbor_kernel_array = disk(kernel_size)
-        #neighbor_kernel = tf.constant(neighbor_kernel_array.reshape(-1), shape=neighbor_kernel_array.shape, dtype=tf.float32)
-        #neighbor_kernel = tf.reshape(neighbor_kernel, [kernel_size, kernel_size, 1, 1])
-        #cornerHeatmaps = tf.nn.depthwise_conv2d(cornerHeatmaps, tf.tile(neighbor_kernel, [1, 1, NUM_CORNERS, 1]), strides=[1, 1, 1, 1], padding='SAME')
+        # kernel_size = kernelSize
+        # neighbor_kernel_array = disk(kernel_size)
+        # neighbor_kernel = tf.constant(neighbor_kernel_array.reshape(-1), shape=neighbor_kernel_array.shape, dtype=tf.float32)
+        # neighbor_kernel = tf.reshape(neighbor_kernel, [kernel_size, kernel_size, 1, 1])
+        # cornerHeatmaps = tf.nn.depthwise_conv2d(cornerHeatmaps, tf.tile(neighbor_kernel, [1, 1, NUM_CORNERS, 1]), strides=[1, 1, 1, 1], padding='SAME')
         corners = tf.cast(cornerHeatmaps > 0.5, tf.float32)
 
     # cornerSegmentation = tf.sparse_to_dense(tf.stack([corners[:, 1], corners[:, 0]], axis=1), (HEIGHT, WIDTH), corners[:, 2], validate_indices=False)
@@ -110,12 +123,14 @@ def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=Fa
     points = tf.concat([points, tf.ones((NUM_POINTS, 1))], axis=1)
 
     if readImageFeatures:
-        input_dict = {'points': points, 'point_indices': point_indices, 'image_features': imageFeatures, 'image_path': imagePath, 'flags': flags}
+        input_dict = {'points': points, 'point_indices': point_indices, 'image_features': imageFeatures,
+                      'image_path': imagePath, 'flags': flags}
     else:
         input_dict = {'points': points, 'point_indices': point_indices, 'image_path': imagePath, 'flags': flags}
         pass
     gt_dict = {'corner': corners, 'icon': iconSegmentation, 'room': roomSegmentation, 'num_corners': numCorners}
     return input_dict, gt_dict
+
 
 # class RecordReader():
 #     def __init__(self):
@@ -199,14 +214,25 @@ def parse_fn(example, augmentation, readImageFeatures = False, convertCorners=Fa
 
 def getDatasetTrain(filenames, augmentation, readImageFeatures, batchSize):
     if len(filenames) == 1:
-        return tf.data.TFRecordDataset(filenames[0]).repeat().map(functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures), num_parallel_calls=NUM_THREADS).batch(batchSize).prefetch(1)
+        return tf.data.TFRecordDataset(filenames[0]).repeat().map(
+            functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures),
+            num_parallel_calls=NUM_THREADS).batch(batchSize).prefetch(1)
     else:
-        return tf.data.Dataset.from_tensor_slices(filenames).interleave(lambda x: tf.data.TFRecordDataset(x).repeat().map(functools.partial(parse_fn, augmentation=augmentation), num_parallel_calls=NUM_THREADS), cycle_length=len(filenames), block_length=batchSize).batch(batchSize).prefetch(100 / len(filenames)).shuffle(100 / len(filenames))
+        return tf.data.Dataset.from_tensor_slices(filenames).interleave(
+            lambda x: tf.data.TFRecordDataset(x).repeat().map(functools.partial(parse_fn, augmentation=augmentation),
+                                                              num_parallel_calls=NUM_THREADS),
+            cycle_length=len(filenames), block_length=batchSize).batch(batchSize).prefetch(
+            100 / len(filenames)).shuffle(100 / len(filenames))
 
 
 def getDatasetVal(filenames, augmentation, readImageFeatures, batchSize):
-    #return tf.data.Dataset.from_tensor_slices(filenames).interleave(lambda x: tf.data.TFRecordDataset(x).map(functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures), num_parallel_calls=NUM_THREADS), cycle_length=len(filenames), block_length=batchSize).apply(tf.contrib.data.batch_and_drop_remainder(batchSize)).prefetch(1)
+    # return tf.data.Dataset.from_tensor_slices(filenames).interleave(lambda x: tf.data.TFRecordDataset(x).map(functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures), num_parallel_calls=NUM_THREADS), cycle_length=len(filenames), block_length=batchSize).apply(tf.contrib.data.batch_and_drop_remainder(batchSize)).prefetch(1)
     if len(filenames) == 1:
-        return tf.data.TFRecordDataset(filenames[0]).repeat().map(functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures), num_parallel_calls=NUM_THREADS).batch(batchSize).prefetch(1)
+        return tf.data.TFRecordDataset(filenames[0]).repeat().map(
+            functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures),
+            num_parallel_calls=NUM_THREADS).batch(batchSize).prefetch(1)
     else:
-        return tf.data.Dataset.from_tensor_slices(filenames).interleave(lambda x: tf.data.TFRecordDataset(x).map(functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures), num_parallel_calls=NUM_THREADS), cycle_length=len(filenames), block_length=batchSize).apply(tf.contrib.data.batch_and_drop_remainder(batchSize)).prefetch(1)
+        return tf.data.Dataset.from_tensor_slices(filenames).interleave(lambda x: tf.data.TFRecordDataset(x).map(
+            functools.partial(parse_fn, augmentation=augmentation, readImageFeatures=readImageFeatures),
+            num_parallel_calls=NUM_THREADS), cycle_length=len(filenames), block_length=batchSize).apply(
+            tf.contrib.data.batch_and_drop_remainder(batchSize)).prefetch(1)
