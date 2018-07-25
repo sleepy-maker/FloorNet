@@ -38,11 +38,12 @@ def write_scene_pc(points, output_path):
 
 
 class RecordWriter:
-    def __init__(self, num_points, base_dir, phase, im_size):
+    def __init__(self, num_points, base_dir, phase, im_size, max_num_corners=300):
         self.num_points = num_points
         self.base_dir = base_dir
         self.phase = phase
         self.im_size = im_size  # HEIGHT, WIDTH = SIZE
+        self.max_num_corners = max_num_corners
 
         self.file_paths = self.get_pc_filepaths()
 
@@ -99,17 +100,15 @@ class RecordWriter:
 
         points[:, 3:] = points[:, 3:] / 255 - 0.5
 
-        points = np.concatenate([points, np.zeros([self.num_points, 1])], axis=1)
-
         coordinates = np.clip(np.round(points[:, :2] * self.im_size).astype(np.int32), 0, self.im_size - 1)
 
         points_indices = self.get_projection_indices(coordinates)
 
         # prepare other g.t. related inputs to be zeros for now
 
-        corner_gt = np.zeros([100, 3])
+        corner_gt = np.zeros([self.max_num_corners, 3], dtype=np.int64)
 
-        num_corners = 100
+        num_corners = 0
 
         icon_segmentation = np.zeros((self.im_size, self.im_size), dtype=np.uint8)
 
@@ -133,7 +132,7 @@ class RecordWriter:
         self.writer.write(example.SerializeToString())
 
     def get_projection_indices(self, coordinates):
-        indices_map = np.zeros((self.num_points), dtype=np.int64)
+        indices_map = np.zeros([self.num_points], dtype=np.int64)
         for i, coord in enumerate(coordinates):
             x, y = coord
             indices_map[i] = y * self.im_size + x
@@ -141,6 +140,6 @@ class RecordWriter:
 
 
 if __name__ == '__main__':
-    base_dir = '/Users/cjc/vision/inverse-cad/Lianjia-samples'
-    record_writer = RecordWriter(num_points=50000, base_dir=base_dir, phase='train', im_size=256)
+    base_dir = '/local-scratch/cjc/FloorNet/data/Lianjia-samples'
+    record_writer = RecordWriter(num_points=50000, base_dir=base_dir, phase='test', im_size=256)
     record_writer.write()

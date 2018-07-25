@@ -324,6 +324,8 @@ def build_graph(options, input_dict):
 
             pointcloud_indices_inp = getCoarseIndicesMapsBatch(pointcloud_indices_inp, WIDTH, HEIGHT)
             batchIndexOffsets = []
+
+            # todo: the 6 here is the 6 elements in the sizes... but this is kind of werid?
             for c in xrange(6):
                 batchIndexOffsets.append(
                     (np.arange(options.batchSize / len(options.gpu_id), dtype=np.int32)) * SIZES[c] * SIZES[c])
@@ -341,6 +343,8 @@ def build_graph(options, input_dict):
                                                  tf.reshape(indices_maps[0], (-1,)),
                                                  num_segments=options.batchSize / len(options.gpu_id) * SIZES[0] *
                                                               SIZES[0]) / options.sumScale
+
+
             x0_topdown = tf.reshape(x0_topdown, (options.batchSize / len(options.gpu_id), SIZES[0], SIZES[0], -1))
             x0_down = x0_topdown
 
@@ -1198,16 +1202,14 @@ def test(options):
         filenames.append('data/Syn_val.tfrecords')
     if '1' in options.dataset:
         filenames.append('data/Tango_val.tfrecords')
-        pass
     if '2' in options.dataset:
         filenames.append('data/ScanNet_val.tfrecords')
-        pass
     if '3' in options.dataset:
         filenames.append('data/Matterport_val.tfrecords')
-        pass
     if '4' in options.dataset:
         filenames.append('data/SUNCG_val.tfrecords')
-        pass
+    if options.dataset == '5':
+        filenames = ['data/Lianjia-samples_test.tfrecords',]
 
     dataset = getDatasetVal(filenames, '', '4' in options.branches, options.batchSize)
 
@@ -1215,6 +1217,7 @@ def test(options):
     input_dict, gt_dict = iterator.get_next()
 
     pred_dict, debug_dict = build_graph(options, input_dict)
+    # todo: figure out what does the flags in the input_dict mean
     dataset_flag = input_dict['flags'][0, 0]
     flags = input_dict['flags'][:, 1]
     loss, loss_list = build_loss(options, pred_dict, gt_dict, dataset_flag, debug_dict)
@@ -1565,7 +1568,7 @@ def parse_args():
                         default=4, type=int)
     parser.add_argument('--dataset', dest='dataset',
                         help='dataset name for test/predict',
-                        default='1', type=str)
+                        default='5', type=str)
     parser.add_argument('--slice', dest='slice', help='whether or not to use the slice version.',
                         action='store_true')
     parser.add_argument('--numTestingImages', dest='numTestingImages',
