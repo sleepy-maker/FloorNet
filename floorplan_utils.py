@@ -2,6 +2,7 @@ import numpy as np
 from skimage import measure
 import cv2
 import copy
+import pdb
 from utils import *
 
 NUM_WALL_CORNERS = 13
@@ -992,6 +993,7 @@ def drawResultImageFinal(width, height, result):
         y_1 = int(round((points[0][1] + points[1][1]) / 2))
         y_2 = int(round((points[2][1] + points[3][1]) / 2))
 
+        pdb.set_trace()
         iconSize = iconImage.shape  # (y, x)
         # print('icon_size', iconSize)
         icon_is_landscape = iconSize[1] > iconSize[0]

@@ -3,7 +3,7 @@ import cv2
 from QP import reconstructFloorplan, findMatches
 from RecordReader import *
 from train import *
-
+import pdb
 
 # Disable
 def blockPrint():
@@ -59,6 +59,9 @@ def evaluate(options):
     if '4' in options.dataset:
         filenames.append('data/SUNCG_val.tfrecords')
         pass
+
+    if '5' in options.dataset:
+        filenames = ['data/Lianjia-samples_test.tfrecords',]
 
     dataset = getDatasetVal(filenames, '', '4' in options.branches, options.batchSize)
 
@@ -231,7 +234,7 @@ def evaluateBatch(options, gt_dict=None, pred_dict=None):
             # pred_icon = pred_icon_separate[batchIndex]
             pass
 
-        if False:
+        if True:
             # print('batch index', batchIndex)
             cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_density.png', density)
             # print('heatmap max value', pred_wc[batchIndex].max())
@@ -310,8 +313,8 @@ def evaluateBatch(options, gt_dict=None, pred_dict=None):
                 continue
 
         if batchIndex < options.visualizeReconstruction or True:
-            if options.debug >= 0 and batchIndex != options.debug:
-                continue
+            # if options.debug >= 0 and batchIndex != options.debug:
+            #     continue
             names.append((batchIndex, gt_dict['image_path'][batchIndex]))
             print(batchIndex, 'start reconstruction', gt_dict['image_path'][batchIndex])
             if True:
@@ -346,21 +349,18 @@ def evaluateBatch(options, gt_dict=None, pred_dict=None):
                                                    debug_prefix=pred_debug_dir)
 
                 if True:
-                    try:
-                        newWidth = newHeight = 1000
-                        resizeResult(result_gt, newWidth, newHeight, WIDTH, HEIGHT)
-                        resultImageGT = drawResultImageFinal(newWidth, newHeight, result_gt)
-                        # cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_result_gt.png', resultImageGT)
-                        cv2.imwrite(options.test_dir + '/' + gt_dict['image_path'][batchIndex] + '_gt.png',
-                                    resultImageGT)
+                    newWidth = newHeight = 1000
+                    # resizeResult(result_gt, newWidth, newHeight, WIDTH, HEIGHT)
+                    # resultImageGT = drawResultImageFinal(newWidth, newHeight, result_gt)
+                    # cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_result_gt.png', resultImageGT)
+                    # cv2.imwrite(options.test_dir + '/' + gt_dict['image_path'][batchIndex] + '_gt.png',
+                    #             resultImageGT)
 
-                        resizeResult(result_pred, newWidth, newHeight, WIDTH, HEIGHT)
-                        resultImagePred = drawResultImageFinal(newWidth, newHeight, result_pred)
-                        cv2.imwrite(options.test_dir + '/' + gt_dict['image_path'][batchIndex] + '_pred.png',
-                                    resultImagePred)
-                    except:
-                        continue
-                    continue
+                    resizeResult(result_pred, newWidth, newHeight, WIDTH, HEIGHT)
+                    resultImagePred = drawResultImageFinal(newWidth, newHeight, result_pred)
+                    cv2.imwrite(options.test_dir + '/' + gt_dict['image_path'][batchIndex] + '_pred.png',
+                                resultImagePred)
+
 
                 if 'wall' not in result_pred or 'wall' not in result_gt:
                     print('invalid result')

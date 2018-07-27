@@ -1762,6 +1762,8 @@ if __name__ == '__main__':
         from evaluate import *
 
         args.batchSize = 1
+        args.separateIconLoss = False
+        args.drawFinal = False
         if args.loss == '5':
             hybrid = args.hybrid
             for loss in '01234':
