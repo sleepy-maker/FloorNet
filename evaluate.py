@@ -322,16 +322,17 @@ def evaluateBatch(options, gt_dict=None, pred_dict=None):
                     blockPrint()
                     pass
 
+                # todo: comment GT related for now since we dont have GT for L data
                 # gtHeatmaps = gt_dict['corner'][batchIndex]
                 # result_gt = reconstructFloorplan(gtHeatmaps[:, :, :NUM_WALL_CORNERS], gtHeatmaps[:, :, NUM_WALL_CORNERS:NUM_WALL_CORNERS + 4], gtHeatmaps[:, :, NUM_WALL_CORNERS + 4:NUM_WALL_CORNERS + 8], segmentation2Heatmaps(gt_dict['icon'][batchIndex], NUM_ICONS), segmentation2Heatmaps(gt_dict['room'][batchIndex], NUM_ROOMS), density[:, :, 0], gt=True)
-                orientationCorners = getOrientationCorners(
-                    gt_dict['corner_values'][batchIndex][:gt_dict['num_corners'][batchIndex]])
-                result_gt = reconstructFloorplan(orientationCorners[:NUM_WALL_CORNERS],
-                                                 orientationCorners[NUM_WALL_CORNERS:NUM_WALL_CORNERS + 4],
-                                                 orientationCorners[NUM_WALL_CORNERS + 4:NUM_WALL_CORNERS + 8],
-                                                 segmentation2Heatmaps(gt_dict['icon'][batchIndex], NUM_ICONS),
-                                                 segmentation2Heatmaps(gt_dict['room'][batchIndex], NUM_ROOMS),
-                                                 density[:, :, 0], gt=True)
+                # orientationCorners = getOrientationCorners(
+                #     gt_dict['corner_values'][batchIndex][:gt_dict['num_corners'][batchIndex]])
+                # result_gt = reconstructFloorplan(orientationCorners[:NUM_WALL_CORNERS],
+                #                                  orientationCorners[NUM_WALL_CORNERS:NUM_WALL_CORNERS + 4],
+                #                                  orientationCorners[NUM_WALL_CORNERS + 4:NUM_WALL_CORNERS + 8],
+                #                                  segmentation2Heatmaps(gt_dict['icon'][batchIndex], NUM_ICONS),
+                #                                  segmentation2Heatmaps(gt_dict['room'][batchIndex], NUM_ROOMS),
+                #                                  density[:, :, 0], gt=True)
 
                 # if batchIndex == 1:
                 # exit(1)
@@ -344,9 +345,14 @@ def evaluateBatch(options, gt_dict=None, pred_dict=None):
                 except OSError as e:
                     pass
 
+                # todo: the gt_dict is set to be None for now,
                 result_pred = reconstructFloorplan(pred_wc[batchIndex], pred_oc[batchIndex], pred_ic[batchIndex],
-                                                   pred_icon, pred_room, density[:, :, 0], gt_dict=result_gt, gt=False,
+                                                   pred_icon, pred_room, density[:, :, 0], gt_dict=None, gt=False,
                                                    debug_prefix=pred_debug_dir)
+
+                if 'wall' not in result_pred:
+                    print('invalid result')
+                    continue
 
                 if True:
                     newWidth = newHeight = 1000
@@ -358,38 +364,39 @@ def evaluateBatch(options, gt_dict=None, pred_dict=None):
 
                     resizeResult(result_pred, newWidth, newHeight, WIDTH, HEIGHT)
                     resultImagePred = drawResultImageFinal(newWidth, newHeight, result_pred)
-                    cv2.imwrite(options.test_dir + '/' + gt_dict['image_path'][batchIndex] + '_pred.png',
+                    cv2.imwrite(options.test_dir + '/' + '{}_Lianjia'.format(batchIndex) + '_pred.png',
                                 resultImagePred)
 
 
-                if 'wall' not in result_pred or 'wall' not in result_gt:
-                    print('invalid result')
-                    continue
+                # if 'wall' not in result_pred or 'wall' not in result_gt:
+                # if 'wall' not in result_pred:
+                #     print('invalid result')
+                #     continue
 
-                statistics = findMatches(result_pred, result_gt, distanceThreshold=10)
+                # statistics = findMatches(result_pred, result_gt, distanceThreshold=10)
 
                 if options.drawFinal:
                     newWidth = newHeight = 1000
-                    resizeResult(result_gt, newWidth, newHeight, WIDTH, HEIGHT)
-                    resultImageGT = drawResultImageFinal(newWidth, newHeight, result_gt)
-                    cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_result_gt.png', resultImageGT)
+                    # resizeResult(result_gt, newWidth, newHeight, WIDTH, HEIGHT)
+                    # resultImageGT = drawResultImageFinal(newWidth, newHeight, result_gt)
+                    # cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_result_gt.png', resultImageGT)
 
                     resizeResult(result_pred, newWidth, newHeight, WIDTH, HEIGHT)
                     resultImagePred = drawResultImageFinal(newWidth, newHeight, result_pred)
                     cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_result_pred.png', resultImagePred)
 
-                    writeRepresentation('popup/data/floorplan_' + str(batchIndex) + '_gt.txt', newWidth, newHeight,
-                                        result_gt)
+                    # writeRepresentation('popup/data/floorplan_' + str(batchIndex) + '_gt.txt', newWidth, newHeight,
+                    #                     result_gt)
                     writeRepresentation('popup/data/floorplan_' + str(batchIndex) + '_pred.txt', newWidth, newHeight,
                                         result_pred)
-                    cv2.imwrite('popup/data/floorplan_' + str(batchIndex) + '_gt.png', resultImageGT)
+                    # cv2.imwrite('popup/data/floorplan_' + str(batchIndex) + '_gt.png', resultImageGT)
                     cv2.imwrite('popup/data/floorplan_' + str(batchIndex) + '_pred.png', resultImagePred)
                     exit(1)
                 else:
-                    resultImage, iconImage = drawResultImage(WIDTH, HEIGHT, result_gt)
-                    cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_reconstruction_wall_gt.png', resultImage)
-                    iconImage[iconImage == 0] = density[iconImage == 0]
-                    cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_reconstruction_icon_gt.png', iconImage)
+                    # resultImage, iconImage = drawResultImage(WIDTH, HEIGHT, result_gt)
+                    # cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_reconstruction_wall_gt.png', resultImage)
+                    # iconImage[iconImage == 0] = density[iconImage == 0]
+                    # cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_reconstruction_icon_gt.png', iconImage)
                     resultImage, iconImage = drawResultImage(WIDTH, HEIGHT, result_pred)
                     cv2.imwrite(options.test_dir + '/' + str(batchIndex) + '_reconstruction_wall_pred.png', resultImage)
                     iconImage[iconImage == 0] = density[iconImage == 0]
@@ -417,18 +424,18 @@ def evaluateBatch(options, gt_dict=None, pred_dict=None):
                 # print('find ground-truths among predictions')
                 # statistics = findMatches(result_gt, result_pred, distanceThreshold=10)
                 # print(statistics)
-                print('statistics',
-                      [(k, float(v[0]) / max(v[1], 1), float(v[0]) / max(v[2], 1)) for k, v in statistics.iteritems()])
+                # print('statistics',
+                #       [(k, float(v[0]) / max(v[1], 1), float(v[0]) / max(v[2], 1)) for k, v in statistics.iteritems()])
                 # print('topology statistics', [(k, float(v[0]) / max(v[1], 1), float(v[0]) / max(v[2], 1)) for k, v in topologyStatistics.iteritems()])
-                print('finish reconstruction', gt_dict['image_path'][batchIndex])
-                for k, v in statistics.iteritems():
-                    if k in statisticsSum:
-                        for c in xrange(3):
-                            statisticsSum[k][c] += v[c]
-                            continue
-                    else:
-                        print(k, 'not in', statisticsSum)
-                    continue
+                # print('finish reconstruction', gt_dict['image_path'][batchIndex])
+                # for k, v in statistics.iteritems():
+                #     if k in statisticsSum:
+                #         for c in xrange(3):
+                #             statisticsSum[k][c] += v[c]
+                #             continue
+                #     else:
+                #         print(k, 'not in', statisticsSum)
+                #     continue
                 if options.debug >= 0:
                     exit(1)
                     pass
