@@ -2,6 +2,7 @@ import numpy as np
 from skimage import measure
 import cv2
 import copy
+import pdb
 from utils import *
 
 NUM_WALL_CORNERS = 13
