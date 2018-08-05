@@ -93,8 +93,6 @@ class RecordWriter:
 
         padding_ratio_w = padding / (maxs - mins)[:, 0]
         padding_ratio_h = padding / (maxs - mins)[:, 1]
-
-        pdb.set_trace()
         
         mins = (maxs + mins) / 2 - max_range / 2
         mins -= padding
@@ -119,8 +117,11 @@ class RecordWriter:
         density_img = drawDensityImage(getDensity(points=points))
         cv2.imwrite('./debug/{}_density.png'.format(filename), density_img)
 
-        annot_image = self.parse_annot(annot_path, padding_ratios=(padding_ratio_w, padding_ratio_h))
+        density_img = np.stack([density_img]*3, axis=2)
+        annot_image = self.parse_annot(density_img, annot_path, mins, max_range)
         cv2.imwrite('./debug/{}_annot.png'.format(filename), annot_image)
+
+
 
         # points[:, 3:] = points[:, 3:] / 255 - 0.5
 
@@ -162,7 +163,7 @@ class RecordWriter:
             indices_map[i] = y * self.im_size + x
         return indices_map
 
-    def parse_annot(self, file_path, padding_ratios):
+    def parse_annot(self, img, file_path, mins, max_range):
         with open(file_path, 'r') as f:
             data = json.load(f)[0]
 
@@ -177,30 +178,34 @@ class RecordWriter:
         
         for point in points:
             point_dict[point['id']] = point
-            all_x.append(point['x'])
-            all_y.append(point['y'])
+            # all_x.append( (point['x'] - 37500) / 1000 )
+            # all_y.append( (point['y'] - 37500) / 1000 )
+
 
         line_dict = dict()
         for line in lines:
             line_dict[line['id']] = line
 
-        min_x, max_x = min(all_x), max(all_x)
-        min_y, max_y = min(all_y), max(all_y)
+        # min_x, max_x = min(all_x), max(all_x)
+        # min_y, max_y = min(all_y), max(all_y)
 
         # adjust the border
-        extra = max(max_y-min_y, max_x-min_x) * 0.05
-        width = max_x - min_x + 1
-        height = max_y - min_y + 1
-        min_x -= width * padding_ratios[0]; min_y -= height * padding_ratios[1]
-        max_x += width * padding_ratios[0]; max_y += height * padding_ratios[1]
-        width *= (1 + 2*padding_ratios[0])
-        height *= (1 + 2*padding_ratios[1])
+        # width = max_x - min_x + 1
+        # height = max_y - min_y + 1
+        # min_x -= width * padding_ratios[0]; min_y -= height * padding_ratios[1]
+        # max_x += width * padding_ratios[0]; max_y += height * padding_ratios[1]
+        # width *= (1 + 2*padding_ratios[0])
+        # height *= (1 + 2*padding_ratios[1])
 
-        img = np.zeros([self.im_size, self.im_size, 3], dtype=np.uint8)
+        # img = np.zeros([self.im_size, self.im_size, 3], dtype=np.uint8)
+
+        min_x = mins[0][0]
+        min_y = mins[0][1]
+        width = height = max_range
 
         # draw all corners
         for point in points:
-            img_x, img_y = self._draw_corner_with_scaling(img, (point['x'], point['y']), min_x, width, min_y, height)
+            img_x, img_y = self._draw_corner_with_scaling(img, ((point['x']-37500)/1000, (point['y']-37500)/1000), min_x, width, min_y, height)
             point_dict[point['id']]['img_x'] = img_x
             point_dict[point['id']]['img_y'] = img_y
         
@@ -216,11 +221,11 @@ class RecordWriter:
 
         # draw all line with labels, such as doors, windows
         for line_item in line_items:
-            start_pt = (line_item['startPointAt']['x'], line_item['startPointAt']['y'])
-            end_pt = (line_item['endPointAt']['x'], line_item['endPointAt']['y'])  
+            start_pt = ((line_item['startPointAt']['x']-37500)/1000, (line_item['startPointAt']['y']-37500)/1000)
+            end_pt = ((line_item['endPointAt']['x']-37500)/1000, (line_item['endPointAt']['y']-37500)/1000) 
             img_start_pt = self._draw_corner_with_scaling(img, start_pt, min_x, width, min_y, height, color=(0,255,0))
             img_end_pt = self._draw_corner_with_scaling(img, end_pt, min_x, width, min_y, height, color=(0,255,0))
-            cv2.line(img, img_start_pt, img_end_pt, (0, 255, 255))  
+            cv2.line(img, img_start_pt, img_end_pt, (0, 255, 255))
             cv2.putText(img, line_item['is'], (img_start_pt[0], img_start_pt[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,255,255), 1)
 
         print(len(areas))
