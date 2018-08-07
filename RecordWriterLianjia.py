@@ -74,33 +74,21 @@ class RecordWriter:
     def write_example(self, ply_path, annot_path):
         points = read_scene_pc(ply_path)
 
-        axis_trans_mat = np.array([[1, 0, 0, 0],
-                                   [0, 0, 1, 0],
-                                   [0, -1, 0, 0],
-                                   [0, 0, 0, 1]])
-
         xyz = points[:, :3]
-        xyz = np.concatenate([xyz, np.ones([xyz.shape[0], 1])], axis=1)
 
-        transformed_xyz = np.matmul(axis_trans_mat, xyz.transpose([1, 0])).transpose([1, 0])
-        transformed_xyz = transformed_xyz[:, :3]
-
-        mins = transformed_xyz.min(0, keepdims=True)
-        maxs = transformed_xyz.max(0, keepdims=True)
+        mins = xyz.min(0, keepdims=True)
+        maxs = xyz.max(0, keepdims=True)
 
         max_range = (maxs - mins)[:, :2].max()
         padding = max_range * 0.05
-
-        padding_ratio_w = padding / (maxs - mins)[:, 0]
-        padding_ratio_h = padding / (maxs - mins)[:, 1]
         
         mins = (maxs + mins) / 2 - max_range / 2
         mins -= padding
         max_range += padding * 2
 
-        transformed_xyz = (transformed_xyz - mins) / max_range
+        xyz = (xyz - mins) / max_range
 
-        new_points = np.concatenate([transformed_xyz, points[:, 3:6]], axis=1)
+        new_points = np.concatenate([xyz, points[:, 3:6]], axis=1)
         points = new_points
 
         if points.shape[0] < self.num_points:
@@ -165,7 +153,7 @@ class RecordWriter:
 
     def parse_annot(self, img, file_path, mins, max_range):
         with open(file_path, 'r') as f:
-            data = json.load(f)[0]
+            data = json.load(f)
 
         points = data['points']
         lines = data['lines']
@@ -173,29 +161,13 @@ class RecordWriter:
         areas = data['areas']
             
         point_dict = dict()
-        all_x = list()
-        all_y = list()
         
         for point in points:
             point_dict[point['id']] = point
-            # all_x.append( (point['x'] - 37500) / 1000 )
-            # all_y.append( (point['y'] - 37500) / 1000 )
-
 
         line_dict = dict()
         for line in lines:
             line_dict[line['id']] = line
-
-        # min_x, max_x = min(all_x), max(all_x)
-        # min_y, max_y = min(all_y), max(all_y)
-
-        # adjust the border
-        # width = max_x - min_x + 1
-        # height = max_y - min_y + 1
-        # min_x -= width * padding_ratios[0]; min_y -= height * padding_ratios[1]
-        # max_x += width * padding_ratios[0]; max_y += height * padding_ratios[1]
-        # width *= (1 + 2*padding_ratios[0])
-        # height *= (1 + 2*padding_ratios[1])
 
         # img = np.zeros([self.im_size, self.im_size, 3], dtype=np.uint8)
 
@@ -205,7 +177,7 @@ class RecordWriter:
 
         # draw all corners
         for point in points:
-            img_x, img_y = self._draw_corner_with_scaling(img, ((point['x']-37500)/1000, (point['y']-37500)/1000), min_x, width, min_y, height)
+            img_x, img_y = self._draw_corner_with_scaling(img, (point['x'], point['y']), min_x, width, min_y, height)
             point_dict[point['id']]['img_x'] = img_x
             point_dict[point['id']]['img_y'] = img_y
         
@@ -221,8 +193,8 @@ class RecordWriter:
 
         # draw all line with labels, such as doors, windows
         for line_item in line_items:
-            start_pt = ((line_item['startPointAt']['x']-37500)/1000, (line_item['startPointAt']['y']-37500)/1000)
-            end_pt = ((line_item['endPointAt']['x']-37500)/1000, (line_item['endPointAt']['y']-37500)/1000) 
+            start_pt = (line_item['startPointAt']['x'], line_item['startPointAt']['y'])
+            end_pt = (line_item['endPointAt']['x'], line_item['endPointAt']['y'])
             img_start_pt = self._draw_corner_with_scaling(img, start_pt, min_x, width, min_y, height, color=(0,255,0))
             img_end_pt = self._draw_corner_with_scaling(img, end_pt, min_x, width, min_y, height, color=(0,255,0))
             cv2.line(img, img_start_pt, img_end_pt, (0, 255, 255))
@@ -232,15 +204,15 @@ class RecordWriter:
         return img
 
     def _draw_corner_with_scaling(self, img, corner, min_x, width, min_y, height, color=(0,0,255)):
-        img_x = math.floor((corner[0] - min_x) * 1.0 / width * self.im_size)
-        img_y = math.floor((corner[1] - min_y) * 1.0 / height * self.im_size)
+        img_x = int(math.floor((corner[0] - min_x) * 1.0 / width * self.im_size))
+        img_y = int(math.floor((corner[1] - min_y) * 1.0 / height * self.im_size))
         cv2.circle(img, (img_x,img_y), 2, color, -1)
         return img_x, img_y
 
 
 
 if __name__ == '__main__':
-    base_dir = '/Users/cjc/vision/Lianjia-inverse-cad/inverse-cad/data/processed'
+    base_dir = '/local-scratch/cjc/Lianjia-inverse-cad/FloorNet/data/first_500/processed_test'
     record_writer = RecordWriter(num_points=50000, base_dir=base_dir, phase='test', im_size=256)
     record_writer.write()
 
