@@ -35,7 +35,8 @@ python train.py --task=evaluate
     
 - train.py
 
-    The model definition of floornet(in build_graph()), and the training/testing/visualization logics.
+    The model definition of floornet(in build_graph()), and the training/testing/visualization logics.  
+    predict hasn't defined yet.
     
 - evaluate.py
 
@@ -45,6 +46,7 @@ python train.py --task=evaluate
 
     This is for converting the collected Tango data into tfrecords, then during training/testing tfrecords are used to create 
     tensorflow Dataset instances.
+    file format .obj/.mtl
     
 - RecordReader.py
 
