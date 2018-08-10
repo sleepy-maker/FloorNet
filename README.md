@@ -48,6 +48,14 @@ python train.py --task=evaluate
     tensorflow Dataset instances.
     file format .obj/.mtl
     
+    RecordWriterTango  
+    args  
+    numPoints = 50000  
+    numInputChannels = 7
+    augmentation = ''  
+    task = 'val'
+    
+    
 - RecordReader.py
 
     This is for reading the saved tfrecords when instantiating tensorflow Dataset 
