@@ -8,6 +8,9 @@ This paper proposes FloorNet, a novel neural network, to turn RGBD videos of ind
 ## Dependencies
 Python 2.7, TensorFlow (>= 1.3), numpy, opencv 3.
 
+## tfrecords
+https://github.com/warmspringwinds/tensorflow_notes/blob/master/tfrecords_guide.ipynb      
+
 ## Data
 We collect 155 scans of residential units and annotated corresponding floorplan information. Among 155 scans, 135 are used for training and 20 are for testing. We convert both training data and testing data to tfrecords files which can be downloaded [here](https://mega.nz/#F!5yQy0b5T!ykkR4dqwGO9J5EwnKT_GBw). Please put the downloaded files under folder *data/*.
 
