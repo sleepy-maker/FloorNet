@@ -14,6 +14,9 @@ https://github.com/warmspringwinds/tensorflow_notes/blob/master/tfrecords_guide.
 ## Data
 We collect 155 scans of residential units and annotated corresponding floorplan information. Among 155 scans, 135 are used for training and 20 are for testing. We convert both training data and testing data to tfrecords files which can be downloaded [here](https://mega.nz/#F!5yQy0b5T!ykkR4dqwGO9J5EwnKT_GBw). Please put the downloaded files under folder *data/*.
 
+## OBJ
+RecordWriterTango.py expect that an obj file has the same amount of v,vn, and vt. In addition the texture is one image file.
+
 ## Annotator
 For reference, a similar (but not the same) annotator written in Python is [here](https://github.com/art-programmer/FloorplanAnnotator). You need to make some changes to annotate your own data.
 
